@@ -8,6 +8,7 @@ struct Data {
 int num1;
 int num2;
 char op;
+int stop;
 };
 
 int main()
@@ -18,6 +19,7 @@ socklen_t len = sizeof(clientAddr);
 
 struct Data d;
 int result;
+int stop;
 
 serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -29,6 +31,7 @@ bind(serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
 
 printf("Server is waiting...\n");
 
+do {
 recvfrom(serverSocket, &d, sizeof(d), 0, (struct sockaddr *)&clientAddr, &len);
 
 switch(d.op) {
@@ -62,7 +65,8 @@ sendto(serverSocket, &result, sizeof(result), 0, (struct sockaddr *)&clientAddr,
 
 printf("Result Sent = %d\n", result);
 
-close(serverSocket);
+recvfrom(serverSocket, stop, sizeof(stop), 0, (struct sockaddr *)&clientAddr, &len);
+} while (stop)
 
 return 0;
 }
