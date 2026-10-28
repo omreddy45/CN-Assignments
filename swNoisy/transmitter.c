@@ -30,10 +30,10 @@ int main() {
     int rtt = 2 * tt + 2 * tp;
     int timeout_sec = 3 * rtt;
 
-    //struct timeval sock_timeout;
-    //sock_timeout.tv_sec = timeout_sec;
-    //sock_timeout.tv_usec = 0;
-    //setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &sock_timeout, sizeof(sock_timeout));
+    struct timeval sock_timeout;
+    sock_timeout.tv_sec = timeout_sec;
+    sock_timeout.tv_usec = 0;
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &sock_timeout, sizeof(sock_timeout));
 
     sendto(sock, &tt, sizeof(tt), 0, (struct sockaddr *)&receiver, sizeof(receiver));
     sendto(sock, &tp, sizeof(tp), 0, (struct sockaddr *)&receiver, sizeof(receiver));
@@ -55,7 +55,6 @@ int main() {
             printf("t%d: Acknowledgement for Packet %d received from receiver\n", (int)difftime(time(NULL), start_time), buffer);
             buffer++;
         } else {
-            sleep(timeout_sec);
             printf("t%d: Timeout (waited %d sec = 3*RTT) - Acknowledgement not received for Packet %d\n", (int)difftime(time(NULL), start_time), timeout_sec, buffer);
             printf("t%d: Retransmitting Packet %d\n", (int)difftime(time(NULL), start_time), buffer);
         }
