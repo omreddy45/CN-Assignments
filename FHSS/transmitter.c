@@ -6,42 +6,41 @@
 #include<sys/socket.h>
 #include<netinet/in.h>
 
+struct packet {
+    int freq;
+    char data[100];
+};
+
 int main() {
 
-int port[] = {9000,9001,9002,9003,9004};
-int hop[] = {3,1,0,4,2};
+    int freq[] = {2400,2401,2402,2403,2404};
+    int hop[] = {3,1,0,4,2};
 
-char *reply[] = {"Hello",", ","My ","name ","is ","Om ","Reddy"};
+    char *reply[] = {"Hello",", ","My ","name ","is ","Om ","Reddy"};
 
-int transmitterSocket[5];
+    int totalHop = sizeof(hop)/sizeof(hop[0]);
+    int totalMsg = sizeof(reply)/sizeof(reply[0]);
 
-struct sockaddr_in receiverAddress[5];
+    int transmitterSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
-int totalHop = sizeof(hop)/sizeof(hop[0]);
-int totalMsg = sizeof(reply)/sizeof(reply[0]);
+    struct sockaddr_in receiverAddress;
+    receiverAddress.sin_family = AF_INET;
+    receiverAddress.sin_port = htons(9000);
+    receiverAddress.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-for(int i=0; i<5; i++) {
+    for(int i=0; i<totalMsg; i++) {
 
-transmitterSocket[i] = socket(AF_INET,SOCK_DGRAM,0);
+        struct packet p;
+        p.freq = freq[hop[i%totalHop]];
+        strcpy(p.data, reply[i]);
 
-receiverAddress[i].sin_family = AF_INET;
-receiverAddress[i].sin_port = htons(port[i]);
-receiverAddress[i].sin_addr.s_addr = INADDR_ANY;
+        sendto(transmitterSocket, &p, sizeof(p), 0, (struct sockaddr *)&receiverAddress, sizeof(receiverAddress));
 
-}
+        printf("Sent on %d MHz: %s\n", p.freq, p.data);
 
-for(int i=0; i<totalMsg; i++) {
+        sleep(1);
+    }
 
-sendto(transmitterSocket[hop[i%totalHop]], reply[i], strlen(reply[i])+1, 0, (struct sockaddr *)&receiverAddress[hop[i%totalHop]], sizeof(receiverAddress[hop[i%totalHop]]));
-
-printf("Sent: %s\n", reply[i]);
-
-sleep(1);
-
-}
-
-for(int i=0; i<5; i++)
-close(transmitterSocket[i]);
-
-return 0;
+    close(transmitterSocket);
+    return 0;
 }

@@ -6,43 +6,42 @@
 #include<sys/socket.h>
 #include<netinet/in.h>
 
+struct packet {
+    int freq;
+    char data[100];
+};
+
 int main() {
 
-int port[] = {9000,9001,9002,9003,9004};
-int hop[] = {3,1,0,4,2};
+    int freq[] = {2400,2401,2402,2403,2404};
+    int hop[] = {3,1,0,4,2};
 
-int receiverSocket[5];
+    int totalHop = sizeof(hop)/sizeof(hop[0]);
 
-struct sockaddr_in receiverAddress, transmitterAddress;
+    int receiverSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
-socklen_t len = sizeof(transmitterAddress);
+    struct sockaddr_in receiverAddress, transmitterAddress;
+    socklen_t len = sizeof(transmitterAddress);
 
-char buffer[256];
+    receiverAddress.sin_family = AF_INET;
+    receiverAddress.sin_port = htons(9000);
+    receiverAddress.sin_addr.s_addr = INADDR_ANY;
 
-int totalHop = sizeof(hop)/sizeof(hop[0]);
+    bind(receiverSocket, (struct sockaddr *)&receiverAddress, sizeof(receiverAddress));
 
-for(int i=0; i<5; i++) {
+    for(int i=0; i<7; i++) {
 
-receiverSocket[i] = socket(AF_INET, SOCK_DGRAM, 0);
+        int tuned = freq[hop[i%totalHop]];
 
-receiverAddress.sin_family = AF_INET;
-receiverAddress.sin_port = htons(port[i]);
-receiverAddress.sin_addr.s_addr = INADDR_ANY;
+        struct packet p;
+        recvfrom(receiverSocket, &p, sizeof(p), 0, (struct sockaddr *)&transmitterAddress, &len);
 
-bind(receiverSocket[i], (struct sockaddr *)&receiverAddress, sizeof(receiverAddress));
+        if(p.freq == tuned)
+            printf("Tuned to %d MHz, Received: %s\n", tuned, p.data);
+        else
+            printf("Tuned to %d MHz, packet on %d MHz ignored\n", tuned, p.freq);
+    }
 
-}
-
-for(int i=0; i<7; i++) {
-
-recvfrom(receiverSocket[hop[i%totalHop]], buffer, sizeof(buffer), 0, (struct sockaddr *)&transmitterAddress, &len);
-
-printf("Received: %s\n", buffer);
-
-}
-
-for(int i=0; i<5; i++)
-close(receiverSocket[i]);
-
-return 0;
+    close(receiverSocket);
+    return 0;
 }
